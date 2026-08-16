@@ -1,42 +1,54 @@
-name: Ban tin sang hang ngay
+name: Daily Market Brief
 
 on:
   schedule:
-    # 0h UTC = 7h sang gio Viet Nam (UTC+7)
     - cron: "0 0 * * *"
-  workflow_dispatch: {}   # cho phep bam nut chay thu bang tay tren tab Actions
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  keo-tin:
+  generate:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write   # can quyen nay de commit ket qua nguoc lai repo
-    steps:
-      - name: Lay code trong repo
-        uses: actions/checkout@v4
 
-      - name: Cai Python
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Cai thu vien can thiet
-        run: pip install feedparser vnstock
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U feedparser vnstock
 
-      - name: Chay script keo tin (markdown log)
+      - name: Sync with latest main
+        run: |
+          git fetch origin main
+          git merge origin/main -X ours --no-edit || true
+
+      - name: Generate report
+        run: |
+          python generate_report.py
+
+      - name: Ensure .nojekyll exists
         run: |
           mkdir -p docs
-          python3 kero_tin.py --hours 15 --out "docs/$(date +%F).md"
+          touch docs/.nojekyll
 
-      - name: Tao dashboard HTML (trang hien thi)
+      - name: Commit and push report
         run: |
-          python3 generate_report.py --hours 15 --out docs/index.html
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Luu ket qua vao repo
-        run: |
-          git config user.name "daily-bot"
-          git config user.email "daily-bot@users.noreply.github.com"
-          git add docs/
-          git diff --cached --quiet && echo "Khong co gi moi" || git commit -m "Ban tin $(date +%F)"
-          git pull --rebase origin main
-          git push
+          git add docs/index.html docs/.nojekyll
+
+          git diff --cached --quiet || git commit -m "Update daily market brief"
+
+          git push origin main
