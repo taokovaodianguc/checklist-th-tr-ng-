@@ -25,18 +25,18 @@ jobs:
 
       - name: Chay script keo tin (markdown log)
         run: |
-          mkdir -p reports
-          python3 kero_tin.py --hours 15 --out "reports/$(date +%F).md"
+          mkdir -p docs
+          python3 kero_tin.py --hours 15 --out "docs/$(date +%F).md"
 
       - name: Tao dashboard HTML (trang hien thi)
         run: |
-          python3 generate_report.py --hours 15 --out reports/index.html
+          python3 generate_report.py --hours 15 --out docs/index.html
 
       - name: Luu ket qua vao repo
         run: |
           git config user.name "daily-bot"
           git config user.email "daily-bot@users.noreply.github.com"
-          git add reports/
+          git add docs/
           git diff --cached --quiet && echo "Khong co gi moi" || git commit -m "Ban tin $(date +%F)"
           git pull --rebase origin main
           git push
