@@ -1,0 +1,37 @@
+name: Ban tin sang hang ngay
+
+on:
+  schedule:
+    # 0h UTC = 7h sang gio Viet Nam (UTC+7)
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}   # cho phep bam nut chay thu bang tay tren tab Actions
+
+jobs:
+  keo-tin:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # can quyen nay de commit ket qua nguoc lai repo
+    steps:
+      - name: Lay code trong repo
+        uses: actions/checkout@v4
+
+      - name: Cai Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cai thu vien can thiet
+        run: pip install feedparser
+
+      - name: Chay script keo tin
+        run: |
+          mkdir -p reports
+          python3 kero_tin.py --hours 15 --out "reports/$(date +%F).md"
+
+      - name: Luu ket qua vao repo
+        run: |
+          git config user.name "daily-bot"
+          git config user.email "daily-bot@users.noreply.github.com"
+          git add reports/
+          git diff --cached --quiet && echo "Khong co gi moi" || git commit -m "Ban tin $(date +%F)"
+          git push
