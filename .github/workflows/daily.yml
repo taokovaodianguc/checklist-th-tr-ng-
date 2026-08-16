@@ -21,12 +21,16 @@ jobs:
           python-version: "3.11"
 
       - name: Cai thu vien can thiet
-        run: pip install feedparser
+        run: pip install feedparser vnstock
 
-      - name: Chay script keo tin
+      - name: Chay script keo tin (markdown log)
         run: |
           mkdir -p reports
           python3 kero_tin.py --hours 15 --out "reports/$(date +%F).md"
+
+      - name: Tao dashboard HTML (trang hien thi)
+        run: |
+          python3 generate_report.py --hours 15 --out reports/index.html
 
       - name: Luu ket qua vao repo
         run: |
